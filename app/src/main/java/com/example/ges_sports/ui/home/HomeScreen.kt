@@ -1,4 +1,4 @@
-package com.example.ges_sports.ui.login.home
+package com.example.ges_sports.ui.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -19,7 +19,13 @@ fun HomeScreen(navController: NavController, nombre: String?) {
     ) {
         Text("Bienvenido/a, $nombre", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = { navController.popBackStack() }) {
+        Button(
+            onClick = {
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        ) {
             Text("Cerrar sesión")
         }
     }

@@ -2,10 +2,10 @@ package com.example.ges_sports.data
 
 import com.example.ges_sports.models.User
 
-object LoginRepository {
+object LoginRepository { //Singleton
 
     private val usuarios = listOf(
-        User(1, "Ana López", "ana@correo.com", "1234", "admin"),
+        User(1, "Ana López", "ana@correo.com", "1234", "ADMIN_DEPORTIVO"),
         User(2, "Luis Gómez", "luis@correo.com", "abcd", "usuario"),
         User(3, "María Pérez", "maria@correo.com", "pass1", "usuario"),
         User(4, "Carlos Ruiz", "carlos@correo.com", "pass2", "editor"),
@@ -18,5 +18,4 @@ object LoginRepository {
     )
 
     fun obtenerUsuarios(): List<User> = usuarios
-
 }
