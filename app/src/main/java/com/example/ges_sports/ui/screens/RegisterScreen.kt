@@ -3,58 +3,59 @@ package com.example.ges_sports.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.ges_sports.R
-import com.example.ges_sports.domain.LogicLogin
+import com.example.ges_sports.models.User
+import com.example.ges_sports.ui.backend.ges_user.GesUserViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(
+    navController: NavHostController,
+    viewModel: GesUserViewModel
+) {
+    var username by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var repeatPassword by rememberSaveable { mutableStateOf("") }
+    var error by rememberSaveable { mutableStateOf("") }
 
-    val logic = remember { LogicLogin() }
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var repeatPassword by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0288D1), // Azul (arriba)
-                        Color(0xFF000000)  // Negro (abajo)
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0288D1),
+                        Color(0xFF000000)
                     )
                 )
             )
             .padding(32.dp)
-    )
-    {
+    ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 🏀 Logo (asegúrate de tenerlo en res/drawable)
+
             Image(
-                painter = painterResource(id = R.drawable.logo), // 👈 tu imagen aquí
+                painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo centro multideporte",
-                modifier = Modifier
-                    .size(120.dp) // ajusta tamaño
+                modifier = Modifier.size(120.dp)
             )
 
             Spacer(Modifier.height(32.dp))
@@ -93,6 +94,7 @@ fun RegisterScreen(navController: NavController) {
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Contraseña") },
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
@@ -108,6 +110,7 @@ fun RegisterScreen(navController: NavController) {
                 value = repeatPassword,
                 onValueChange = { repeatPassword = it },
                 label = { Text("Repite tu contraseña") },
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
@@ -119,50 +122,61 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-          Button(
-                onClick = {/*
-                    try {
-                        val user = logic.comprobarLogin(email, password)
-                        navController.navigate("home/${user.nombre}")
-                    }catch (e: IllegalArgumentException) {
-                        errorMessage = e.message.toString()
+            Button(
+                onClick = {
+                    error = ""
+
+                    // Validaciones
+                    if (
+                        username.isBlank() ||
+                        email.isBlank() ||
+                        password.isBlank() ||
+                        repeatPassword.isBlank()
+                    ) {
+                        error = "Rellena todos los campos."
+                        return@Button
                     }
-                */},
+
+                    if (password != repeatPassword) {
+                        error = "Las contraseñas no coinciden."
+                        return@Button
+                    }
+
+                    val nuevoUsuario = User(
+                        id = 0,
+                        nombre = username,
+                        email = email,
+                        password = password,
+                        rol = "ADMIN_DEPORTIVO"
+                    )
+
+                    scope.launch {
+                        viewModel.addUser(nuevoUsuario)
+
+                        navController.navigate("login") {
+                            popUpTo("register") { inclusive = true }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF64B5F6),
                     contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                )
             ) {
                 Text("Registrarme")
-            }/*
-
-            if (errorMessage != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
             }
-            Spacer(Modifier.height(16.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            if (error.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "¿No tienes cuenta?",
-                    color = Color.White,
-                    fontSize = 14.sp
+                    text = error,
+                    color = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.width(5.dp))
-                TextButton(onClick = { navController.navigate("register") }) {
-                    Text(
-                        text = "Regístrate",
-                        color = Color(0xFF64B5F6),
-                        fontSize = 14.sp
-                    )
-                }
-            }*/
+            }
         }
     }
 }

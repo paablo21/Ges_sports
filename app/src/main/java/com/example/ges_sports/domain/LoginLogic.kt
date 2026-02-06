@@ -1,25 +1,22 @@
 package com.example.ges_sports.domain
-
-import com.example.ges_sports.data.DataUserRepository
 import com.example.ges_sports.models.User
+import com.example.ges_sports.repository.UserRepository
+import kotlinx.coroutines.flow.first
 
-class LogicLogin {
+class LogicLogin(
+    private val userRepository: UserRepository
+) {
 
-    fun comprobarLogin(email: String, password: String): User {
-
-        // Usamos la lista real de usuarios del CRUD
-        val usuarios = DataUserRepository.getUsuariosNoSuspend()
-
-        // Buscar el usuario por email y contraseña
-        val user = usuarios.firstOrNull { usuario ->
-            usuario.email.equals(email, ignoreCase = true) &&
-                    usuario.password == password
+    suspend fun comprobarLogin(email: String, password: String): User {
+        if (email.isBlank() || password.isBlank()) {
+            throw IllegalArgumentException("Los campos no pueden estar vacíos.")
         }
 
-        if (user == null) {
-            throw IllegalArgumentException("Credenciales incorrectas")
-        }
+        val users = userRepository.getAllUsers().first()
 
-        return user
+        return users.find {
+            it.email.equals(email, ignoreCase = true) &&
+                    it.password == password
+        } ?: throw IllegalArgumentException("Email o contraseña incorrectos.")
     }
 }

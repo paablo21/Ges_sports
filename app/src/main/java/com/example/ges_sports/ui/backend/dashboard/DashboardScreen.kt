@@ -35,7 +35,7 @@ fun DashboardScreen(navController: NavHostController) {
 
     val items = listOf(
         DashboardItem("EQUIPOS", "Gestión de equipos", Icons.Default.Face),
-        DashboardItem("USUARIOS", "Altas, bajas, roles", Icons.Default.Person, "usuarios"),
+        DashboardItem("USUARIOS", "Altas, bajas, roles", Icons.Default.Person, "gesuser"),
         DashboardItem("PISTAS", "Instalaciones deportivas", Icons.Default.Home),
         DashboardItem("RESERVAS", "Control de reservas", Icons.Default.DateRange)
     )

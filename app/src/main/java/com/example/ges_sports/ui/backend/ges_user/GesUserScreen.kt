@@ -2,9 +2,20 @@ package com.example.ges_sports.ui.backend.ges_user
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,82 +23,71 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.ges_sports.data.DataUserRepository
-import com.example.ges_sports.models.User
-import com.example.ges_sports.models.UserRoles
 
-@OptIn(ExperimentalMaterial3Api::class)
+import com.example.ges_sports.data.RoomUserRepository
+import com.example.ges_sports.database.AppDatabase
+import com.example.ges_sports.models.UserRoles
+import com.example.ges_sports.ui.components.AppTopBar
+
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GesUserScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    viewModel: GesUserViewModel
 ) {
 
-    val viewModel: GesUserViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return GesUserViewModel(DataUserRepository) as T
-            }
-        }
-    )
-
-    LaunchedEffect(Unit) {
-        viewModel.cargarUsuarios()
-    }
-
-    val usuarios = viewModel.usuarios
-    val filtroRol = viewModel.filtroRol
+    val users = viewModel.users
+    val selectedRole = viewModel.selectedRole
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Gestión de usuarios", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                ),
-                modifier = Modifier.background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF0288D1),
-                            Color(0xFF01579B)
-                        )
-                    )
-                )
-            )
+            AppTopBar("USUARIOS")
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    navController.navigate("formuser/-1")
-                },
+                onClick = { navController.navigate("formuser/-1") },
                 containerColor = Color(0xFF64B5F6),
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
+                Icon(Icons.Default.Add, contentDescription = "Añadir usuario")
             }
-        }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { padding ->
 
         Column(
             modifier = Modifier
                 .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
+                    Brush.verticalGradient(
+                        listOf(
                             Color(0xFF0288D1),
                             Color(0xFF000000)
                         )
@@ -95,101 +95,59 @@ fun GesUserScreen(
                 )
                 .padding(padding)
                 .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
         ) {
 
-            // CHIPS FILTRO
-            // CHIPS FILTRO – 2 FILAS
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Primera fila: TODOS, Admin, Entrenador
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    listOf(null, "ADMIN_DEPORTIVO", "ENTRENADOR").forEach { rol ->
-                        FilterChip(
-                            selected = filtroRol == rol,
-                            onClick = { viewModel.seleccionarRol(rol) },
-                            label = {
-                                Text(
-                                    when (rol) {
-                                        null -> "TODOS"
-                                        "ADMIN_DEPORTIVO" -> "Admin"
-                                        "ENTRENADOR" -> "Entrenador"
-                                        else -> ""
-                                    }
-                                )
-                            },
-                            border = null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color(0xFF1A1A1A).copy(alpha = 0.6f),
-                                selectedContainerColor = Color.White,
-                                labelColor = Color.White,
-                                selectedLabelColor = Color.Black
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+            // ───── FILTROS (IGUALES) ─────
+            @OptIn(ExperimentalLayoutApi::class)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                // Segunda fila: Árbitro, Jugador
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    listOf("ARBITRO", "JUGADOR").forEach { rol ->
-                        FilterChip(
-                            selected = filtroRol == rol,
-                            onClick = { viewModel.seleccionarRol(rol) },
-                            label = {
-                                Text(
-                                    when (rol) {
-                                        "ARBITRO" -> "Árbitro"
-                                        "JUGADOR" -> "Jugador"
-                                        else -> ""
-                                    }
-                                )
-                            },
-                            border = null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color(0xFF1A1A1A).copy(alpha = 0.6f),
-                                selectedContainerColor = Color.White,
-                                labelColor = Color.White,
-                                selectedLabelColor = Color.Black
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                FilterChip(
+                    selected = selectedRole == null,
+                    onClick = { viewModel.onRoleSelected(null) },
+                    label = { Text("TODOS") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color(0xFF1A1A1A).copy(alpha = 0.6f),
+                        selectedContainerColor = Color.White,
+                        labelColor = Color.White,
+                        selectedLabelColor = Color.Black
+                    ),
+                    border = null
+                )
+
+                UserRoles.allRoles.forEach { (roleKey, roleLabel) ->
+                    FilterChip(
+                        selected = selectedRole == roleKey,
+                        onClick = {
+                            val newRole = if (selectedRole == roleKey) null else roleKey
+                            viewModel.onRoleSelected(newRole)
+                        },
+                        label = { Text(roleLabel) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color(0xFF1A1A1A).copy(alpha = 0.6f),
+                            selectedContainerColor = Color.White,
+                            labelColor = Color.White,
+                            selectedLabelColor = Color.Black
+                        ),
+                        border = null
+                    )
                 }
             }
 
+            Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(4.dp))
-
-            // LISTA
-            if (usuarios.isEmpty()) {
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No hay usuarios. Pulsa + para añadir.", color = Color.White)
-                }
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(usuarios) { user ->
-                        TarjetaUsuario(
-                            usuario = user,
-                            onEditar = { u ->
-                                navController.navigate("formuser/${u.id}")
-                            },
-                            onBorrar = { viewModel.borrarUsuario(it) }
-                        )
-                    }
+            // ───── LISTADO ─────
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(users) { user ->
+                    UsuarioCard(
+                        nombreRol = user.nombre,
+                        onEdit = {
+                            navController.navigate("formuser/${user.id}")
+                        },
+                        onDelete = {
+                            viewModel.deleteUser(user)
+                        }
+                    )
                 }
             }
         }
@@ -197,10 +155,10 @@ fun GesUserScreen(
 }
 
 @Composable
-fun TarjetaUsuario(
-    usuario: User,
-    onEditar: (User) -> Unit,
-    onBorrar: (User) -> Unit
+fun UsuarioCard(
+    nombreRol: String,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -211,7 +169,7 @@ fun TarjetaUsuario(
         )
     ) {
         Row(
-            Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -224,7 +182,7 @@ fun TarjetaUsuario(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    usuario.nombre.first().uppercase(),
+                    text = nombreRol.first().uppercase(),
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -232,27 +190,28 @@ fun TarjetaUsuario(
 
             Spacer(Modifier.width(14.dp))
 
-            Column(Modifier.weight(1f)) {
-                Text(
-                    usuario.nombre,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF01579B)
-                )
-                Text(
-                    usuario.rol,
-                    color = Color(0xFF0288D1),
-                    fontWeight = FontWeight.SemiBold
+            Text(
+                text = nombreRol,
+                modifier = Modifier.weight(1f),
+                color = Color(0xFF01579B),
+                fontWeight = FontWeight.Bold
+            )
+
+            IconButton(onClick = onEdit) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Editar",
+                    tint = Color(0xFF0288D1)
                 )
             }
 
-            IconButton(onClick = { onEditar(usuario) }) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF0288D1))
-            }
-
-            IconButton(onClick = { onBorrar(usuario) }) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color.Red
+                )
             }
         }
     }
 }
-

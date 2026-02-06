@@ -1,4 +1,4 @@
-package com.example.ges_sports.data
+/*package com.example.ges_sports.data
 
 import com.example.ges_sports.models.User
 import com.example.ges_sports.repository.UserRepository
@@ -32,7 +32,7 @@ object DataUserRepository : UserRepository {
         User(
             id = 4,
             nombre = "Pablo Teruel",
-            email = "luis.arbitro@club.es",
+            email = "pabloteruel@club.es",
             password = "1234",
             rol = "ARBITRO"
         ),
@@ -49,7 +49,6 @@ object DataUserRepository : UserRepository {
         return (users.maxOfOrNull { it.id } ?: 0) + 1
     }
 
-    // Método NO suspend para usar desde el login
     fun getUsuariosNoSuspend(): List<User> = users.toList()
 
     override suspend fun addUser(user: User): User {
@@ -84,3 +83,4 @@ object DataUserRepository : UserRepository {
     override suspend fun getUsersByRole(rol: String): List<User> =
         users.filter { it.rol == rol }
     }
+*/

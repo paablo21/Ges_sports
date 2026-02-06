@@ -8,40 +8,39 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.ges_sports.data.DataUserRepository
+import com.example.ges_sports.data.RoomUserRepository
+import com.example.ges_sports.database.AppDatabase
+import com.example.ges_sports.models.User
 import com.example.ges_sports.models.UserRoles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormUserScreen(
     navController: NavHostController,
-    userId: Int
+    viewModel: GesUserViewModel, userId: Int
 ) {
-    val viewModel: GesUserViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return GesUserViewModel(DataUserRepository) as T
-            }
-        }
-    )
+    val context = LocalContext.current
 
-    val usuarioEditando = viewModel.usuarios.firstOrNull { it.id == userId }
 
-    var nombre by remember { mutableStateOf(usuarioEditando?.nombre ?: "") }
-    var email by remember { mutableStateOf(usuarioEditando?.email ?: "") }
-    var password by remember { mutableStateOf(usuarioEditando?.password ?: "") }
-    var rol by remember { mutableStateOf(usuarioEditando?.rol ?: "ADMIN_DEPORTIVO") }
+    val usuarioEditando = viewModel.users.firstOrNull { it.id == userId }
+
+    var nombre by rememberSaveable { mutableStateOf(usuarioEditando?.nombre ?: "") }
+    var email by rememberSaveable { mutableStateOf(usuarioEditando?.email ?: "") }
+    var password by rememberSaveable { mutableStateOf(usuarioEditando?.password ?: "") }
+    var rol by rememberSaveable { mutableStateOf(usuarioEditando?.rol ?: "ADMIN_DEPORTIVO") }
 
     Scaffold(
         topBar = {
@@ -92,7 +91,7 @@ fun FormUserScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ----------- CAMPOS DE TEXTO -------------
+            // CAMPOS DE TEXTO
 
             // NOMBRE
             OutlinedTextField(
@@ -113,7 +112,6 @@ fun FormUserScreen(
                 )
             )
 
-// EMAIL
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -132,7 +130,6 @@ fun FormUserScreen(
                 )
             )
 
-// CONTRASEÑA
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -153,7 +150,6 @@ fun FormUserScreen(
             )
 
 
-            // ----------- ROLES -------------
 
             Text("Rol", color = Color.White)
 
@@ -176,25 +172,18 @@ fun FormUserScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // ----------- BOTÓN GUARDAR -------------
 
             Button(
                 onClick = {
-                    if (nombre.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                        if (usuarioEditando == null) {
-                            viewModel.crearUsuario(nombre, email, password, rol)
-                        } else {
-                            viewModel.editarUsuario(
-                                usuarioEditando.copy(
-                                    nombre = nombre,
-                                    email = email,
-                                    password = password,
-                                    rol = rol
-                                )
-                            )
-                        }
-                        navController.popBackStack()
-                    }
+                    val nuevo = User(
+                        id = 0,
+                        nombre = nombre,
+                        email = email,
+                        password = password,
+                        rol = rol
+                    )
+                    viewModel.addUser(nuevo)
+                    navController.popBackStack()  // volver a la lista
                 },
                 modifier = Modifier
                     .fillMaxWidth()

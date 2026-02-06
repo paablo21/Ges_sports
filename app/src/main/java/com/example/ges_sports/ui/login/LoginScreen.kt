@@ -7,25 +7,46 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.ges_sports.R
+import com.example.ges_sports.data.RoomUserRepository
+import com.example.ges_sports.database.AppDatabase
 import com.example.ges_sports.domain.LogicLogin
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavHostController) {
 
-    val logic = remember { LogicLogin() }
+    // Scope para lanzar corrutinas desde la UI
+    val scope = rememberCoroutineScope()
+
+    //  ROOM
+    val context = LocalContext.current
+    val db = remember { AppDatabase.getDatabase(context.applicationContext) }
+    val userDao = remember { db.userDao() }
+
+    // Repo + Logic (login autenticando contra Room a través del repositorio)
+    val roomRepo = remember { RoomUserRepository(userDao) }
+    val logic = remember { LogicLogin(roomRepo) }
+
+    // Estado de los campos del formulario
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
+
+    // Mensaje de error mostrado debajo de la contraseña (si falla el login)
     var errorMessage by remember { mutableStateOf("") }
 
     Box(
@@ -55,7 +76,7 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Títulos
+            // Título
             Text(
                 text = "CENTRO",
                 color = Color.White,
@@ -75,7 +96,7 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(32.dp))
 
-            // Usuario
+            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -108,7 +129,7 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Checkbox recordar contraseña
+            // Recordar contraseña
             var recordarPassword by remember { mutableStateOf(false) }
 
             Row(
@@ -138,29 +159,28 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // 🔵 BOTÓN DE LOGIN CORREGIDO
+            // Login
             Button(
                 onClick = {
-                    try {
-                        val user = logic.comprobarLogin(email, password)
+                    scope.launch {
+                        try {
+                            val user = logic.comprobarLogin(email, password)
 
-                        // Si es administrador → Dashboard
-                        if (user.rol.equals("ADMIN_DEPORTIVO", ignoreCase = true)) {
-                            navController.navigate("dashboard") {
-                                popUpTo("login") { inclusive = true }
+                            if (user.rol.equals("ADMIN_DEPORTIVO", ignoreCase = true)) {
+                                navController.navigate("dashboard") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home/${user.nombre}") {
+                                    popUpTo("login") { inclusive = true }
+                                }
                             }
-                        }
-                        // Si NO es admin → Home
-                        else {
-                            navController.navigate("home/${user.nombre}") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        }
 
-                        errorMessage = ""
+                            errorMessage = ""
 
-                    } catch (e: IllegalArgumentException) {
-                        errorMessage = e.message ?: "Error desconocido"
+                        } catch (e: IllegalArgumentException) {
+                            errorMessage = e.message ?: "Error desconocido"
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -175,7 +195,6 @@ fun LoginScreen(navController: NavController) {
 
             // Error
             if (errorMessage.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.error
@@ -184,7 +203,7 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Ir a registro
+            // Registro
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,

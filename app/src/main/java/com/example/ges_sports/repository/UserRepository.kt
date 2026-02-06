@@ -1,22 +1,33 @@
 package com.example.ges_sports.repository
 
 import com.example.ges_sports.models.User
+import kotlinx.coroutines.flow.Flow
 
-interface UserRepository{
+interface UserRepository {
 
-    suspend fun getAllUsers(): List<User>
+    fun getAllUsers(): Flow<List<User>>
+    fun getUsersByRole(role: String): Flow<List<User>>
+    /** Obtener una lista con todos los usuarios */
+    /*suspend fun getAllUsers(): List<User>
 
+    /** Obtener una lista de usaurios por rol */
     suspend fun getUsersByRole(rol: String): List<User>
 
+    /** Obtener un usuario por id */
     suspend fun getUserById(id: Int): User?
-
+*/
+    /** Crear usuario nuevo */
     suspend fun addUser(user: User): User
 
-    suspend fun updateUser(user: User): Boolean
+    /** Actualizar usuario existente (true si se ha podido actualizar) */
+    suspend fun updateUser(user: User): Int
 
-    suspend fun deleteUser(user: User): Boolean
+    /** Eliminar usuario por id (true si se ha eliminado alguno) */
+    suspend fun deleteUser(id: Int): Boolean
 }
-
-
-
-
+/*
+* PARA ROOM
+* Room trabaja con Flow<List<User>> (para que Compose actualice automáticamente los datos al insertarse o borrarse usuarios).
+*  fun getAllUsers(): Flow<List<User>>
+    fun getUsersByRole(role: String): Flow<List<User>>
+* */

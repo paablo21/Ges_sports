@@ -1,74 +1,88 @@
 package com.example.ges_sports.ui.backend.ges_user
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ges_sports.models.User
 import com.example.ges_sports.repository.UserRepository
+import com.example.ges_sports.models.User
 import kotlinx.coroutines.launch
 
-class GesUserViewModel(
-    private val repositorio: UserRepository
-) : ViewModel() {
+class GesUserViewModel (val userRepository: UserRepository): ViewModel() {
+    private var _users by mutableStateOf<List<User>>(emptyList())
+    val users: List<User> get() = _users
 
-    private var listaCompleta: List<User> = emptyList()
-
-    var usuarios by mutableStateOf<List<User>>(emptyList())
-        private set
-
-    var filtroRol by mutableStateOf<String?>(null)
-        private set
+    private var _selectedRole by mutableStateOf<String?>(null)
+    val selectedRole: String? get() = _selectedRole
 
     init {
-        cargarUsuarios()
-    }
-
-    // AHORA ES PÚBLICA PARA PODER FORZAR RECARGA AL VOLVER DE FORMUSER
-    fun cargarUsuarios() {
+        // CAMBIO: Colectamos el Flow de Room
         viewModelScope.launch {
-            listaCompleta = repositorio.getAllUsers()
-            aplicarFiltros()
+            userRepository.getAllUsers().collect { lista ->
+                _users = lista
+            }
         }
     }
-
-    private fun aplicarFiltros() {
-        var lista = listaCompleta
-
-        filtroRol?.let { rol ->
-            lista = lista.filter { it.rol == rol }
-        }
-
-
-        usuarios = lista
-    }
-
-
-    fun seleccionarRol(rol: String?) {
-        filtroRol = rol
-        aplicarFiltros()
-    }
-
-    fun crearUsuario(nombre: String, email: String, password: String, rol: String) {
+    /*init {
+        //podemos utilizar directamente loadUsers()
         viewModelScope.launch {
-            if (nombre.isBlank() || email.isBlank() || password.isBlank()) return@launch
-            repositorio.addUser(User(0, nombre, email, password, rol))
-            cargarUsuarios()
+            _users = userRepository.getAllUsers()
+        }
+    }*/
+
+    /* fun loadUsers(){
+         viewModelScope.launch {
+             if(_selectedRole==null){
+                 _users=userRepository.getAllUsers()
+             }else{
+                 _users=userRepository.getUsersByRole(_selectedRole!!)
+             }
+         }
+     }
+     fun onRoleSelected(rol: String?) {
+         _selectedRole = rol
+         viewModelScope.launch {
+             _users = if (rol == null) {
+                 userRepository.getAllUsers()
+             } else {
+                 userRepository.getUsersByRole(rol)
+             }
+         }
+     }*/
+    fun onRoleSelected(rol: String?) {
+        _selectedRole = rol
+        viewModelScope.launch {
+            // 🔧 CAMBIO: también colectamos el Flow filtrado
+            val flow = if (rol == null)
+                userRepository.getAllUsers()
+            else
+                userRepository.getUsersByRole(rol)
+
+            flow.collect { lista ->
+                _users = lista
+            }
+        }
+    }
+    fun addUser(user: User){
+        viewModelScope.launch{
+            userRepository.addUser(user)
+            //  loadUsers()  NO HACE FALTA YA LO HACE FLOW
         }
     }
 
-    fun editarUsuario(usuario: User) {
+    fun updateUser(user: User, onResult: ((Boolean) -> Unit)? = null) {
         viewModelScope.launch {
-            repositorio.updateUser(usuario)
-            cargarUsuarios()
+            val rowsUpdated = userRepository.updateUser(user)
+            onResult?.invoke(rowsUpdated > 0)
+            // 🔥 No hace falta tocar _users: Flow se encarga solo
         }
     }
 
-    fun borrarUsuario(usuario: User) {
-        viewModelScope.launch {
-            repositorio.deleteUser(usuario)
-            cargarUsuarios()
-        }
-    }
+     fun deleteUser(user: User) {
+         viewModelScope.launch {
+             userRepository.deleteUser(user.id)
+             // 🔧 Igual: Flow actualiza automáticamente _users
+         }
+     }
 }
