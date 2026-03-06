@@ -2,27 +2,19 @@ package com.example.ges_sports.ui.backend.ges_user
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.ges_sports.data.RoomUserRepository
-import com.example.ges_sports.database.AppDatabase
 import com.example.ges_sports.models.User
 import com.example.ges_sports.models.UserRoles
 
@@ -30,17 +22,20 @@ import com.example.ges_sports.models.UserRoles
 @Composable
 fun FormUserScreen(
     navController: NavHostController,
-    viewModel: GesUserViewModel, userId: Int
+    viewModel: GesUserViewModel,
+    userId: Int
 ) {
-    val context = LocalContext.current
-
-
+    // 🔧 Buscamos el usuario en la lista del ViewModel (si existe, estamos editando)
     val usuarioEditando = viewModel.users.firstOrNull { it.id == userId }
 
+    // Inicializamos los campos con los datos del usuario (si edita) o vacíos (si crea)
     var nombre by rememberSaveable { mutableStateOf(usuarioEditando?.nombre ?: "") }
     var email by rememberSaveable { mutableStateOf(usuarioEditando?.email ?: "") }
     var password by rememberSaveable { mutableStateOf(usuarioEditando?.password ?: "") }
-    var rol by rememberSaveable { mutableStateOf(usuarioEditando?.rol ?: "ADMIN_DEPORTIVO") }
+    var rol by rememberSaveable { mutableStateOf(usuarioEditando?.rol ?: "JUGADOR") }
+
+    // 🔧 Para mostrar errores de validación
+    var errorMessage by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -54,6 +49,7 @@ fun FormUserScreen(
                         )
                     }
                 },
+                // 🔧 El título cambia según si creamos o editamos
                 title = {
                     Text(
                         if (usuarioEditando == null) "Nuevo usuario" else "Editar usuario",
@@ -91,8 +87,6 @@ fun FormUserScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // CAMPOS DE TEXTO
-
             // NOMBRE
             OutlinedTextField(
                 value = nombre,
@@ -112,6 +106,7 @@ fun FormUserScreen(
                 )
             )
 
+            // EMAIL
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -130,6 +125,7 @@ fun FormUserScreen(
                 )
             )
 
+            // CONTRASEÑA
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -149,8 +145,7 @@ fun FormUserScreen(
                 )
             )
 
-
-
+            // ROL
             Text("Rol", color = Color.White)
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -170,20 +165,48 @@ fun FormUserScreen(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            // 🔧 Mensaje de error si los campos están vacíos
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = Color(0xFFFF6B6B)
+                )
+            }
 
+            Spacer(Modifier.height(8.dp))
 
+            // 🔧 BOTÓN GUARDAR — ahora distingue entre crear y editar
             Button(
                 onClick = {
-                    val nuevo = User(
-                        id = 0,
-                        nombre = nombre,
-                        email = email,
-                        password = password,
-                        rol = rol
-                    )
-                    viewModel.addUser(nuevo)
-                    navController.popBackStack()  // volver a la lista
+                    // Validación básica
+                    if (nombre.isBlank() || email.isBlank() || password.isBlank()) {
+                        errorMessage = "Todos los campos son obligatorios"
+                        return@Button
+                    }
+
+                    if (usuarioEditando == null) {
+                        // 🔧 CREAR: id = 0 para que Room lo autogenere
+                        val nuevoUsuario = User(
+                            id = 0,
+                            nombre = nombre,
+                            email = email,
+                            password = password,
+                            rol = rol
+                        )
+                        viewModel.addUser(nuevoUsuario)
+                    } else {
+                        // 🔧 EDITAR: usamos el mismo id del usuario que estábamos editando
+                        val usuarioActualizado = User(
+                            id = usuarioEditando.id,
+                            nombre = nombre,
+                            email = email,
+                            password = password,
+                            rol = rol
+                        )
+                        viewModel.updateUser(usuarioActualizado)
+                    }
+
+                    navController.popBackStack() // volver a la lista
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,7 +217,8 @@ fun FormUserScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text("Guardar")
+                // 🔧 El texto del botón también cambia según la acción
+                Text(if (usuarioEditando == null) "Crear usuario" else "Guardar cambios")
             }
         }
     }

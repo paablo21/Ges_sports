@@ -18,7 +18,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.ges_sports.R
 import com.example.ges_sports.data.RoomUserRepository
@@ -29,24 +28,17 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(navController: NavHostController) {
 
-    // Scope para lanzar corrutinas desde la UI
     val scope = rememberCoroutineScope()
 
-    //  ROOM
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context.applicationContext) }
     val userDao = remember { db.userDao() }
 
-    // Repo + Logic (login autenticando contra Room a través del repositorio)
     val roomRepo = remember { RoomUserRepository(userDao) }
     val logic = remember { LogicLogin(roomRepo) }
 
-    // Estado de los campos del formulario
     var email by remember { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var rememberMe by rememberSaveable { mutableStateOf(false) }
-
-    // Mensaje de error mostrado debajo de la contraseña (si falla el login)
     var errorMessage by remember { mutableStateOf("") }
 
     Box(
@@ -55,8 +47,8 @@ fun LoginScreen(navController: NavHostController) {
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0288D1), // Azul arriba
-                        Color(0xFF000000)  // Negro abajo
+                        Color(0xFF0288D1),
+                        Color(0xFF000000)
                     )
                 )
             )
@@ -67,7 +59,6 @@ fun LoginScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo centro multideporte",
@@ -76,7 +67,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Título
             Text(
                 text = "CENTRO",
                 color = Color.White,
@@ -96,7 +86,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(32.dp))
 
-            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -112,7 +101,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(8.dp))
 
-            // Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -129,7 +117,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Recordar contraseña
             var recordarPassword by remember { mutableStateOf(false) }
 
             Row(
@@ -159,7 +146,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Login
             Button(
                 onClick = {
                     scope.launch {
@@ -171,7 +157,8 @@ fun LoginScreen(navController: NavHostController) {
                                     popUpTo("login") { inclusive = true }
                                 }
                             } else {
-                                navController.navigate("home/${user.nombre}") {
+                                // 🔧 Ahora pasamos id, nombre y rol a HomeScreen
+                                navController.navigate("home/${user.id}/${user.nombre}/${user.rol}") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
@@ -193,7 +180,6 @@ fun LoginScreen(navController: NavHostController) {
                 Text("Iniciar Sesión")
             }
 
-            // Error
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
@@ -203,7 +189,6 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Registro
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,

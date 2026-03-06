@@ -34,54 +34,34 @@ data class DashboardItem(
 fun DashboardScreen(navController: NavHostController) {
 
     val items = listOf(
-        DashboardItem("EQUIPOS", "Gestión de equipos", Icons.Default.Face),
-        DashboardItem("USUARIOS", "Altas, bajas, roles", Icons.Default.Person, "gesuser"),
-        DashboardItem("PISTAS", "Instalaciones deportivas", Icons.Default.Home),
-        DashboardItem("RESERVAS", "Control de reservas", Icons.Default.DateRange)
+        DashboardItem("EQUIPOS",  "Gestión de equipos",  Icons.Default.Face,      "gesequipo"),
+        DashboardItem("USUARIOS", "Altas, bajas, roles", Icons.Default.Person,    "gesuser"),
+        DashboardItem("PISTAS",   "Pistas y espacios",   Icons.Default.Home,      "gespista"),
+        DashboardItem("RESERVAS", "Control de reservas", Icons.Default.DateRange, "gesreserva")
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0288D1),   // Azul arriba
-                        Color(0xFF000000)    // Negro abajo
-                    )
-                )
-            )
+        modifier = Modifier.fillMaxSize().background(
+            Brush.verticalGradient(listOf(Color(0xFF0288D1), Color(0xFF000000)))
+        )
     ) {
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = {
-                        Text(
-                            "Dashboard administrador",
-                            color = Color.White,
-                            fontSize = 22.sp
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    )
+                    title = { Text("Dashboard administrador", color = Color.White, fontSize = 22.sp) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { padding ->
-
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(16.dp),
+                modifier = Modifier.padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(items) { item ->
-                    DashboardCard(item = item) {
-                        item.route?.let { navController.navigate(it) }
-                    }
+                    DashboardCard(item = item) { item.route?.let { navController.navigate(it) } }
                 }
             }
         }
@@ -91,41 +71,20 @@ fun DashboardScreen(navController: NavHostController) {
 @Composable
 fun DashboardCard(item: DashboardItem, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .height(150.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.90f)
-        ),
+        modifier = Modifier.height(150.dp).clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.Start
         ) {
-
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.title,
-                tint = Color(0xFF0288D1),   // azul del login → coherente
-                modifier = Modifier.size(40.dp)
-            )
-
+            Icon(imageVector = item.icon, contentDescription = item.title, tint = Color(0xFF0288D1), modifier = Modifier.size(40.dp))
             Column {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Black
-                )
-                Text(
-                    text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray
-                )
+                Text(item.title, style = MaterialTheme.typography.titleMedium, color = Color.Black)
+                Text(item.subtitle, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
             }
         }
     }

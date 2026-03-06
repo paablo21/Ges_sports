@@ -9,7 +9,8 @@ import com.example.ges_sports.repository.UserRepository
 import com.example.ges_sports.models.User
 import kotlinx.coroutines.launch
 
-class GesUserViewModel (val userRepository: UserRepository): ViewModel() {
+class GesUserViewModel(val userRepository: UserRepository) : ViewModel() {
+
     private var _users by mutableStateOf<List<User>>(emptyList())
     val users: List<User> get() = _users
 
@@ -17,43 +18,16 @@ class GesUserViewModel (val userRepository: UserRepository): ViewModel() {
     val selectedRole: String? get() = _selectedRole
 
     init {
-        // CAMBIO: Colectamos el Flow de Room
         viewModelScope.launch {
             userRepository.getAllUsers().collect { lista ->
                 _users = lista
             }
         }
     }
-    /*init {
-        //podemos utilizar directamente loadUsers()
-        viewModelScope.launch {
-            _users = userRepository.getAllUsers()
-        }
-    }*/
 
-    /* fun loadUsers(){
-         viewModelScope.launch {
-             if(_selectedRole==null){
-                 _users=userRepository.getAllUsers()
-             }else{
-                 _users=userRepository.getUsersByRole(_selectedRole!!)
-             }
-         }
-     }
-     fun onRoleSelected(rol: String?) {
-         _selectedRole = rol
-         viewModelScope.launch {
-             _users = if (rol == null) {
-                 userRepository.getAllUsers()
-             } else {
-                 userRepository.getUsersByRole(rol)
-             }
-         }
-     }*/
     fun onRoleSelected(rol: String?) {
         _selectedRole = rol
         viewModelScope.launch {
-            // 🔧 CAMBIO: también colectamos el Flow filtrado
             val flow = if (rol == null)
                 userRepository.getAllUsers()
             else
@@ -64,10 +38,10 @@ class GesUserViewModel (val userRepository: UserRepository): ViewModel() {
             }
         }
     }
-    fun addUser(user: User){
-        viewModelScope.launch{
+
+    fun addUser(user: User) {
+        viewModelScope.launch {
             userRepository.addUser(user)
-            //  loadUsers()  NO HACE FALTA YA LO HACE FLOW
         }
     }
 
@@ -75,14 +49,12 @@ class GesUserViewModel (val userRepository: UserRepository): ViewModel() {
         viewModelScope.launch {
             val rowsUpdated = userRepository.updateUser(user)
             onResult?.invoke(rowsUpdated > 0)
-            // 🔥 No hace falta tocar _users: Flow se encarga solo
         }
     }
 
-     fun deleteUser(user: User) {
-         viewModelScope.launch {
-             userRepository.deleteUser(user.id)
-             // 🔧 Igual: Flow actualiza automáticamente _users
-         }
-     }
+    fun deleteUser(user: User) {
+        viewModelScope.launch {
+            userRepository.deleteUser(user.id)
+        }
+    }
 }
